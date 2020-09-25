@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+    <title>블록체인 기반 추첨 서비스</title>
+</head>
+    <body>
+        <div class="container">
+            <h1>블록체인 기반 추첨 서비스</h1>
+            <form>
+                <div class="form-group row">
+                    <label for="staticEmail" class="col-sm-2 col-form-label">주소</label>
+                    <div class="col-sm-10">
+                        <input type="text" readonly class="form-control-plaintext"
+                               id="address" value="">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="staticEmail" class="col-sm-2 col-form-label">전체 추첨번호 개수</label>
+                    <div class="col-sm-10">
+                        <input type="text" readonly class="form-control-plaintext"
+                               id="balance" value="">
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary mb-2" data-toggle="modal" data-target="#mintModal">번호생성</button>
+                <button type="button" id="pickerButton" class="btn btn-primary mb-2">추첨하기</button>
+
+            </form>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">Number</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Owner</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+
+            <div id="console" style="overflow-y: scroll; height: 200px; margin-top: 50px"></div>
+        </div>
+
+        <!-- Transfer Modal -->
+        <div class="modal fade" id="mintModal" tabindex="-1" role="dialog" aria-labelledby="transferModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">번호생성</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="post" id="mintForm">
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" class="form-control" name="name" value="Number-4">
+                            </div>
+                            <div class="form-group">
+                                <label>Owner 주소</label>
+                                <input type="text" class="form-control" name="to_address" value="0x6dFC7931C54fA1b1D9CD3168509Cd9EB2B2626Cd">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="mintButton" class="btn btn-primary">번호 발행</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            $(document).ready(function() {
+                getAccountInfo();
+                getNumberCount();
+                getNumberList();
+
+                // bind event
+                $('#mintButton').click(function() {
+                    mint();
+                });
+                $('#pickerButton').click(function() {
+                    picker();
+                });
+            });
+
+            function getAccountInfo() {
+              $.get('/api/get_info', function(data) {
+                $('#address').val(data.address);
+              });
+            }
+
+            function getNumberCount() {
+              $.get('/api/number-count', function(data) {
+                $('#balance').val(data.numberCount);
+              });
+            }
+
+            function mint() {
+                const data = $('#mintForm').serialize();
+                $.post('/api/mint', data, function(data) {
+                    const result = data.result;
+                    if (result === 'success') {
+                        alert('번호 발행 성공');
+                        location.reload();
+                    } else {
+                        alert('번호 발행 실패');
+                    }
+                });
+            }
+
+            function getNumberList() {
+              $.get('/api/number-list', function(data) {
+                const list = data;
+                $('.table > tbody').html('');
+                for (let i = 0; i < list.length; i++) {
+                  const tx = list[i];
+                  const name = tx.name;
+                  const owner = tx.owner;
+
+                  let html = '';
+                  html += '<tr>';
+                  html +=     '<td>' + (i + 1) + '</td>';
+                  html +=     '<td>' + name + '</td>';
+                  html +=     '<td>' + owner + '</td>';
+                  html += '</tr>';
+                  $('.table > tbody').append(html);
+                }
+              })
+            }
+
+            function picker() {
+                $.get('/api/picker', function(data) {
+                    alert(data.owner + '(' + data.name + ')가 당첨되었습니다.');
+                })
+            }
+        </script>
+    </body>
+</html>
+
+
